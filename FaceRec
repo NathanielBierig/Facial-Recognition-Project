@@ -1,0 +1,50 @@
+import threading
+import cv2
+from deepface import DeepFace
+
+def faceRec(name, ref_img):
+
+    capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # initialize webcam
+    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # set frame standard 480p for
+    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # the video
+
+    count = 0  # set a counter to avoid checking every frame and overloading computer
+    match = False  # initialize flag variable for when the face in reference is detected in video
+    match_lock = threading.Lock()  # insures that
+         # initializers
+    def check(frame):  # see if current frame and the reference match
+        nonlocal match  # nonlocal to allow outside modification
+        try:
+            if DeepFace.verify(frame, ref_img.copy())['verified']:  #checks if current frame and reference
+                with match_lock:                                    # match using DeepFace library
+                    match = True
+
+            else:
+                with match_lock:
+                    match = False
+
+        except ValueError:  # when a match isn't found this exception will be thrown, prevents error
+            with match_lock:
+                match = False
+    while True:  #starts infinate loop for running the functiun, broken by pressing b.
+        ret, frame = capture.read()  # gets current frame
+        if ret:
+            if count % 30 == 0:  # checks every ~ 1/2 seconds (depends on fps) to prevent overloading
+                try:
+                    threading.Thread(target=check, args=(frame.copy(),)).start()  # runs the check, thread so
+                except ValueError:                                                # it can run concurrently
+                    pass
+            count += 1  # +1 every frame
+
+            with match_lock:
+                if (match == True):  # display if a match is found
+                    cv2.putText(frame, "Hi "+name+"! :)", (250, 450), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0),3)  # BGR color format
+                else:  # display if a match isn't found
+                    cv2.putText(frame, "No Match :(", (250, 450), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 3)  # BGR color format
+            cv2.imshow("video", frame)  # to show the current frame, i.e. the video
+
+        key = cv2.waitKey(1)
+        if key == ord("b"):  # press b key to break program
+            break
+
+    cv2.destroyAllWindows()  # closes
