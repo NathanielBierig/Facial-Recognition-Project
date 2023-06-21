@@ -1,0 +1,19 @@
+import cv2
+from FaceRec import faceRec
+def main():
+
+    name = input("Hello, what's your name? ")
+    a = input("Hi "+name+", the program needs to take a reference picture using your webcam, please enter y to allow. ")
+    while (a != 'y'):
+        a = input("Try again, enter y to allow webcam access. ")
+    cap = cv2.VideoCapture(0)
+    ret, frame = cap.read()
+    if ret:
+        refImg = frame
+
+    cap.release()
+    print("Say cheese! the program will run now, give it a few seconds, press b at anytime to break.")
+    faceRec(name,refImg)
+
+if __name__ == '__main__':
+    main()
